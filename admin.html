@@ -805,6 +805,19 @@
         } else {
             // Admin verified!
             document.getElementById('loginContainer').style.display = 'none';
+            
+            // Check if current user is the owner (yahlaredwan76@gmail.com)
+            const isOwner = email.trim().toLowerCase() === 'yahlaredwan76@gmail.com';
+            
+            // If not owner, hide the Admin Management tab button
+            const adminTabs = document.querySelector('.admin-tabs');
+            if (adminTabs) {
+                const adminsTabBtn = Array.from(adminTabs.querySelectorAll('.admin-tab')).find(btn => btn.getAttribute('onclick')?.includes("'admins'"));
+                if (adminsTabBtn) {
+                    adminsTabBtn.style.display = isOwner ? 'inline-block' : 'none';
+                }
+            }
+
             loadAllData();
         }
     }
@@ -859,6 +872,13 @@
 
     async function handleAddAdmin(e) {
         e.preventDefault();
+        
+        // Prevent non-owners from adding admins
+        if (currentAdminEmail.trim().toLowerCase() !== 'yahlaredwan76@gmail.com') {
+            alert('عذراً، فقط المدير الرئيسي المالك للموقع يمتلك صلاحية إضافة مسؤولين جدد!');
+            return;
+        }
+
         const input = document.getElementById('newAdminEmail');
         const email = input.value.trim().toLowerCase();
         if (!email) return alert('يرجى إدخال البريد الإلكتروني');
@@ -878,6 +898,18 @@
     }
 
     async function deleteAdmin(id, email) {
+        // Protect owner from deletion
+        if (email.trim().toLowerCase() === 'yahlaredwan76@gmail.com') {
+            alert('خطأ أمني: لا يمكن حذف حساب المدير الرئيسي المالك للموقع!');
+            return;
+        }
+
+        // Prevent non-owners from deleting admins
+        if (currentAdminEmail.trim().toLowerCase() !== 'yahlaredwan76@gmail.com') {
+            alert('عذراً، فقط المدير الرئيسي المالك للموقع يمتلك صلاحية حذف المسؤولين!');
+            return;
+        }
+
         if (!confirm(`هل أنت متأكد من حذف صلاحية الإدارة عن البريد: "${email}"؟`)) return;
 
         try {

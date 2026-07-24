@@ -1308,13 +1308,17 @@
                 // 6. Custom Code
                 if (pixels.pixel_custom_enabled === 'true' && pixels.pixel_custom_code && pixels.pixel_custom_code.trim()) {
                     if (!document.getElementById('_custom_pixel_injected')) {
-                        const container = document.createElement('div');
-                        container.id = '_custom_pixel_injected';
-                        container.style.display = 'none';
-                        const range = document.createRange();
-                        const fragment = range.createContextualFragment(pixels.pixel_custom_code.trim());
-                        container.appendChild(fragment);
-                        document.head.appendChild(container);
+                        try {
+                            const container = document.createElement('div');
+                            container.id = '_custom_pixel_injected';
+                            container.style.display = 'none';
+                            const range = document.createRange();
+                            const fragment = range.createContextualFragment(pixels.pixel_custom_code.trim());
+                            container.appendChild(fragment);
+                            document.head.appendChild(container);
+                        } catch(customErr) {
+                            console.error("Custom script injection error:", customErr);
+                        }
                     }
                 }
             }

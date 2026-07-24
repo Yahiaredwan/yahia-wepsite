@@ -42,7 +42,7 @@
     <link rel="stylesheet" href="style.css">
 
     <script>
-        // Instant logo and auth state cache loader to prevent visual delays
+        // Pre-detect cached custom logo to load it instantly
         try {
             const cached = localStorage.getItem('sc_content_v1');
             if (cached) {
@@ -102,7 +102,10 @@
     <nav class="navbar">
         <div class="nav-logo">
             <!-- Using the logo from the local directory -->
-            <img src="logo/aaaa.jpg.jpeg" alt="شعار الدورة" class="logo-img dyn_site_logo" onload="if(window.cachedSiteLogo && this.src !== window.cachedSiteLogo) this.src = window.cachedSiteLogo;">
+            <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="شعار الدورة" class="logo-img dyn_site_logo" id="main_logo_img">
+            <script>
+                if (window.cachedSiteLogo) document.getElementById('main_logo_img').src = window.cachedSiteLogo;
+            </script>
         </div>
         <div class="nav-menu" id="nav-menu">
             <ul class="nav-links">
@@ -111,7 +114,7 @@
                 <li><a href="#courses">المحاور والمدربين</a></li>
                 <li><a href="#faq">الأسئلة الشائعة</a></li>
             </ul>
-            <div class="nav-cta" id="nav-cta-container">
+            <div class="nav-cta" id="nav-cta-container" style="opacity: 0; transition: opacity 0.1s ease;">
                 <a href="#login" class="btn-outline-login" id="loginBtn">تسجيل الدخول</a>
                 <a href="#pricing-new" class="btn-primary"
                     onclick="document.getElementById('pricing-new').scrollIntoView({behavior: 'smooth'}); return false;">اشترك
@@ -122,17 +125,18 @@
                 (function() {
                     try {
                         const session = localStorage.getItem('sb-tiompjrtajnmgvoqfb-auth-token');
+                        const container = document.getElementById('nav-cta-container');
                         if (session) {
                             const parsed = JSON.parse(session);
                             if (parsed && parsed.user) {
                                 const isAdmin = localStorage.getItem('sc_user_is_admin') === 'true';
-                                const container = document.getElementById('nav-cta-container');
                                 if (container) {
                                     let adminHtml = '';
                                     if (isAdmin) {
                                         adminHtml = '<a href="admin.html" class="btn-primary" style="background:#007bff; border-color:#007bff; color:white; margin-left:10px;"><i class="fa-solid fa-gear"></i> لوحة الإدارة</a>';
                                     }
                                     container.innerHTML = adminHtml + '<a href="#" class="btn-outline-login btn-logout" id="logoutBtn">تسجيل الخروج</a>';
+                                    container.style.opacity = '1';
                                     document.addEventListener('DOMContentLoaded', () => {
                                         document.getElementById('logoutBtn')?.addEventListener('click', async (e) => {
                                             e.preventDefault();
@@ -141,9 +145,16 @@
                                         });
                                     });
                                 }
+                            } else {
+                                if (container) container.style.opacity = '1';
                             }
+                        } else {
+                            if (container) container.style.opacity = '1';
                         }
-                    } catch(e) {}
+                    } catch(e) {
+                        const container = document.getElementById('nav-cta-container');
+                        if (container) container.style.opacity = '1';
+                    }
                 })();
             </script>
         </div>
@@ -1009,7 +1020,10 @@
         <div class="footer-grid">
             <div class="footer-col">
                 <div class="footer-logo-wrapper">
-                    <img src="logo/2.png" alt="شعار الدورة" class="footer-logo dyn_site_logo" onload="if(window.cachedSiteLogo && this.src !== window.cachedSiteLogo) this.src = window.cachedSiteLogo;">
+                    <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="شعار الدورة" class="footer-logo dyn_site_logo" id="footer_logo_img">
+                    <script>
+                        if (window.cachedSiteLogo) document.getElementById('footer_logo_img').src = window.cachedSiteLogo;
+                    </script>
                 </div>
                 <p>مبادرة معاً ضد جرائم الإنترنت.</p>
             </div>
@@ -2835,12 +2849,12 @@
             });
         });
 
-        // Service Worker Registration for high performance caching & offline support
+        // Unregister any existing service workers to ensure fresh asset delivery and prevent loading delays
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('[SW] Registered successfully scope:', reg.scope))
-                    .catch(err => console.warn('[SW] Registration failed:', err));
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+                for (let registration of registrations) {
+                    registration.unregister();
+                }
             });
         }
     </script>

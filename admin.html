@@ -806,8 +806,8 @@
             // Admin verified!
             document.getElementById('loginContainer').style.display = 'none';
             
-            // Check if current user is the owner (yahlaredwan76@gmail.com)
-            const isOwner = email.trim().toLowerCase() === 'yahlaredwan76@gmail.com';
+            // Check if current user is the owner (yahiaredwan@outlook.com)
+            const isOwner = email.trim().toLowerCase() === 'yahiaredwan@outlook.com';
             
             // If not owner, hide the Admin Management tab button
             const adminTabs = document.querySelector('.admin-tabs');
@@ -874,7 +874,7 @@
         e.preventDefault();
         
         // Prevent non-owners from adding admins
-        if (currentAdminEmail.trim().toLowerCase() !== 'yahlaredwan76@gmail.com') {
+        if (currentAdminEmail.trim().toLowerCase() !== 'yahiaredwan@outlook.com') {
             alert('عذراً، فقط المدير الرئيسي المالك للموقع يمتلك صلاحية إضافة مسؤولين جدد!');
             return;
         }
@@ -899,13 +899,13 @@
 
     async function deleteAdmin(id, email) {
         // Protect owner from deletion
-        if (email.trim().toLowerCase() === 'yahlaredwan76@gmail.com') {
+        if (email.trim().toLowerCase() === 'yahiaredwan@outlook.com') {
             alert('خطأ أمني: لا يمكن حذف حساب المدير الرئيسي المالك للموقع!');
             return;
         }
 
         // Prevent non-owners from deleting admins
-        if (currentAdminEmail.trim().toLowerCase() !== 'yahlaredwan76@gmail.com') {
+        if (currentAdminEmail.trim().toLowerCase() !== 'yahiaredwan@outlook.com') {
             alert('عذراً، فقط المدير الرئيسي المالك للموقع يمتلك صلاحية حذف المسؤولين!');
             return;
         }

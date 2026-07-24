@@ -167,8 +167,8 @@ CREATE TABLE IF NOT EXISTS admins (
 
 -- Insert default initial admin safely
 INSERT INTO admins (email)
-SELECT 'yahlaredwan76@gmail.com'
-WHERE NOT EXISTS (SELECT 1 FROM admins WHERE email = 'yahlaredwan76@gmail.com');
+SELECT 'yahiaredwan@outlook.com'
+WHERE NOT EXISTS (SELECT 1 FROM admins WHERE email = 'yahiaredwan@outlook.com');
 
 -- Enable RLS for all tables
 ALTER TABLE site_content ENABLE ROW LEVEL SECURITY;

@@ -1729,6 +1729,13 @@
                 showToast("فشل إنشاء الحساب: " + error.message);
                 btn.textContent = 'إنشاء الحساب';
             } else {
+                // Insert pending request immediately to avoid waiting for email confirmation
+                try {
+                    await supabaseClient.from('user_approvals').insert([{ email: email, phone: phone, status: 'pending' }]);
+                } catch(err) {
+                    console.error("Direct insert error:", err);
+                }
+
                 showToast("تم إرسال رابط تأكيد إلى بريدك الإلكتروني. يرجى مراجعة بريدك الوارد لتفعيل الحساب.", "success");
                 signupModal.classList.remove('active');
                 btn.textContent = 'إنشاء الحساب';

@@ -41,6 +41,20 @@
     <!-- Custom CSS - critical, load normally -->
     <link rel="stylesheet" href="style.css">
 
+    <script>
+        // Instant logo and auth state cache loader to prevent visual delays
+        try {
+            const cached = localStorage.getItem('sc_content_v1');
+            if (cached) {
+                const { data } = JSON.parse(cached);
+                const logoItem = data.find(item => item.id === 'site_logo');
+                if (logoItem && logoItem.content) {
+                    window.cachedSiteLogo = logoItem.content;
+                }
+            }
+        } catch(e) {}
+    </script>
+
     <!-- Tailwind CSS (No Preflight to avoid conflicts) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -88,7 +102,7 @@
     <nav class="navbar">
         <div class="nav-logo">
             <!-- Using the logo from the local directory -->
-            <img src="logo/aaaa.jpg.jpeg" alt="شعار الدورة" class="logo-img dyn_site_logo">
+            <img src="logo/aaaa.jpg.jpeg" alt="شعار الدورة" class="logo-img dyn_site_logo" onload="if(window.cachedSiteLogo && this.src !== window.cachedSiteLogo) this.src = window.cachedSiteLogo;">
         </div>
         <div class="nav-menu" id="nav-menu">
             <ul class="nav-links">
@@ -103,6 +117,35 @@
                     onclick="document.getElementById('pricing-new').scrollIntoView({behavior: 'smooth'}); return false;">اشترك
                     الآن</a>
             </div>
+            <script>
+                // Instant Navigation State Loader to prevent visual delay/flicker
+                (function() {
+                    try {
+                        const session = localStorage.getItem('sb-tiompjrtajnmgvoqfb-auth-token');
+                        if (session) {
+                            const parsed = JSON.parse(session);
+                            if (parsed && parsed.user) {
+                                const isAdmin = localStorage.getItem('sc_user_is_admin') === 'true';
+                                const container = document.getElementById('nav-cta-container');
+                                if (container) {
+                                    let adminHtml = '';
+                                    if (isAdmin) {
+                                        adminHtml = '<a href="admin.html" class="btn-primary" style="background:#007bff; border-color:#007bff; color:white; margin-left:10px;"><i class="fa-solid fa-gear"></i> لوحة الإدارة</a>';
+                                    }
+                                    container.innerHTML = adminHtml + '<a href="#" class="btn-outline-login btn-logout" id="logoutBtn">تسجيل الخروج</a>';
+                                    document.addEventListener('DOMContentLoaded', () => {
+                                        document.getElementById('logoutBtn')?.addEventListener('click', async (e) => {
+                                            e.preventDefault();
+                                            await supabaseClient.auth.signOut();
+                                            location.reload();
+                                        });
+                                    });
+                                }
+                            }
+                        }
+                    } catch(e) {}
+                })();
+            </script>
         </div>
         <div class="menu-toggle" id="mobile-menu">
             <div class="hamburger">
@@ -966,7 +1009,7 @@
         <div class="footer-grid">
             <div class="footer-col">
                 <div class="footer-logo-wrapper">
-                    <img src="logo/2.png" alt="شعار الدورة" class="footer-logo">
+                    <img src="logo/2.png" alt="شعار الدورة" class="footer-logo dyn_site_logo" onload="if(window.cachedSiteLogo && this.src !== window.cachedSiteLogo) this.src = window.cachedSiteLogo;">
                 </div>
                 <p>مبادرة معاً ضد جرائم الإنترنت.</p>
             </div>

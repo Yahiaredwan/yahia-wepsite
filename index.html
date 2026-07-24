@@ -1743,7 +1743,54 @@
             if (session && session.user) {
                 const user = session.user;
                 const userEmail = user.email;
+
+                // 1. Check if user is admin first
+                let isAdmin = false;
+                try {
+                    const { data: adminData } = await supabaseClient.from('admins').select('*').eq('email', userEmail).single();
+                    if (adminData) {
+                        isAdmin = true;
+                    }
+                } catch(err) {}
+
+                // 2. If not admin, check registration approval status
+                if (!isAdmin) {
+                    try {
+                        const { data: approval, error: appErr } = await supabaseClient
+                            .from('user_approvals')
+                            .select('*')
+                            .eq('email', userEmail)
+                            .single();
+
+                        if (appErr || !approval) {
+                            // Insert default pending request
+                            const userPhone = user.user_metadata?.phone || user.phone || null;
+                            await supabaseClient.from('user_approvals').insert([{ email: userEmail, phone: userPhone, status: 'pending' }]);
+                            await supabaseClient.auth.signOut();
+                            showToast("تم إنشاء الحساب بنجاح. حسابك حالياً قيد المراجعة والموافقة من قبل الإدارة.", "success");
+                            return;
+                        }
+
+                        if (approval.status === 'pending') {
+                            await supabaseClient.auth.signOut();
+                            showToast("حسابك قيد المراجعة حالياً. يرجى الانتظار حتى يتم تفعيله من قبل الإدارة.", "error");
+                            return;
+                        }
+
+                        if (approval.status === 'rejected') {
+                            await supabaseClient.auth.signOut();
+                            showToast("تم رفض تفعيل حسابك من قبل الإدارة. يرجى التواصل معنا للاستفسار.", "error");
+                            return;
+                        }
+                    } catch (checkErr) {
+                        console.error("Approval check error:", checkErr);
+                    }
+                }
+
                 let adminHtml = '';
+                if (isAdmin) {
+                    adminHtml = `<a href="admin.html" class="btn-primary" style="background:#007bff; border-color:#007bff; color:white; margin-left:10px;"><i class="fa-solid fa-gear"></i> لوحة الإدارة</a>`;
+                }
                 
                 // Pre-fill registration modal
                 const regFullName = document.getElementById('regFullName');
@@ -1754,14 +1801,6 @@
                 if (regPhone && (user.user_metadata?.phone || user.phone)) {
                     regPhone.value = user.user_metadata?.phone || user.phone;
                 }
-
-                // Check if user is admin
-                try {
-                    const { data: adminData } = await supabaseClient.from('admins').select('*').eq('email', userEmail).single();
-                    if (adminData) {
-                        adminHtml = `<a href="admin.html" class="btn-primary" style="background:#007bff; border-color:#007bff; color:white; margin-left:10px;"><i class="fa-solid fa-gear"></i> لوحة الإدارة</a>`;
-                    }
-                } catch(err) { console.error("Not an admin"); }
 
                 navCta.innerHTML = `
                     ${adminHtml}

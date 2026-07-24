@@ -275,3 +275,23 @@ CREATE POLICY "Allow public select on sections" ON sections FOR SELECT USING (tr
 CREATE POLICY "Allow public update on sections" ON sections FOR UPDATE USING (true);
 CREATE POLICY "Allow public insert on sections" ON sections FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public delete on sections" ON sections FOR DELETE USING (true);
+
+-- 11. Create user_approvals table
+CREATE TABLE IF NOT EXISTS user_approvals (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email TEXT UNIQUE NOT NULL,
+    phone TEXT,
+    status TEXT DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+ALTER TABLE user_approvals ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow public select on user_approvals" ON user_approvals;
+DROP POLICY IF EXISTS "Allow public insert on user_approvals" ON user_approvals;
+DROP POLICY IF EXISTS "Allow public update on user_approvals" ON user_approvals;
+DROP POLICY IF EXISTS "Allow public delete on user_approvals" ON user_approvals;
+
+CREATE POLICY "Allow public select on user_approvals" ON user_approvals FOR SELECT USING (true);
+CREATE POLICY "Allow public insert on user_approvals" ON user_approvals FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public update on user_approvals" ON user_approvals FOR UPDATE USING (true);
+CREATE POLICY "Allow public delete on user_approvals" ON user_approvals FOR DELETE USING (true);

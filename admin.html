@@ -87,6 +87,7 @@
             <button type="button" class="admin-tab" style="background: #28a745; color: #fff;" onclick="openTab('subscriptions', this)"><i class="fa-solid fa-users"></i> الاشتراكات</button>
             <button type="button" class="admin-tab" style="background: #17a2b8; color: #fff;" onclick="openTab('payment_methods', this)"><i class="fa-solid fa-credit-card"></i> طرق الدفع</button>
             <button type="button" class="admin-tab" style="background: #e1306c; color: #fff;" onclick="openTab('pixels', this)"><i class="fa-solid fa-chart-line"></i> بكسل السوشيال ميديا</button>
+            <button type="button" class="admin-tab" style="background: #007bff; color: #fff;" onclick="openTab('user_approvals', this)"><i class="fa-solid fa-user-check"></i> تفعيل الحسابات</button>
             <button type="button" class="admin-tab" style="background: #fd7e14; color: #fff;" onclick="openTab('admins', this)"><i class="fa-solid fa-user-shield"></i> إدارة المسؤولين</button>
         </div>
 
@@ -645,6 +646,29 @@
                 </table>
             </div>
         </div>
+
+        <!-- User Approvals Management -->
+        <div id="tab-user_approvals" class="section-box">
+            <h2 style="color: #007bff;"><i class="fa-solid fa-user-check"></i> إدارة تفعيل حسابات المشتركين (User Approvals)</h2>
+            <p style="color: #666; margin-bottom: 20px;">يمكنك الموافقة على تسجيل دخول المشتركين الجدد أو تعطيل/رفض حساباتهم من هنا.</p>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: right;">
+                    <thead>
+                        <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
+                            <th style="padding: 12px; width: 60px;">#</th>
+                            <th style="padding: 12px;">البريد الإلكتروني للعضو</th>
+                            <th style="padding: 12px;">رقم الهاتف</th>
+                            <th style="padding: 12px;">تاريخ التسجيل</th>
+                            <th style="padding: 12px;">الحالة الحالية</th>
+                            <th style="padding: 12px; width: 340px;">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userApprovalsList">
+                        <!-- Loaded dynamically by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -911,6 +935,7 @@
             await loadSections();
             await loadSubscriptions();
             await loadAdmins();
+            await loadUserApprovals();
 
             document.getElementById('loader').style.display = 'none';
             document.getElementById('content').style.display = 'block';
@@ -1527,6 +1552,92 @@
             alert('حدث خطأ: ' + err.message);
         }
     };
+
+    // --- User Approvals Management ---
+    async function loadUserApprovals() {
+        const list = document.getElementById('userApprovalsList');
+        if (!list) return;
+        list.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">جاري تحميل الحسابات...</td></tr>';
+
+        try {
+            const { data, error } = await supabaseClient
+                .from('user_approvals')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            list.innerHTML = '';
+            if (!data || data.length === 0) {
+                list.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">لا توجد حسابات مسجلة حالياً.</td></tr>';
+                return;
+            }
+
+            data.forEach((user, idx) => {
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid #e2e8f0';
+
+                const dateFormatted = user.created_at ? new Date(user.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute:'2-digit' }) : '-';
+
+                let statusBadge = '';
+                if (user.status === 'approved') {
+                    statusBadge = '<span style="background: #28a745; color: white; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: bold;">مفعّل ✅</span>';
+                } else if (user.status === 'rejected') {
+                    statusBadge = '<span style="background: #dc3545; color: white; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: bold;">مرفوض/معطّل ❌</span>';
+                } else {
+                    statusBadge = '<span style="background: #ffc107; color: black; padding: 4px 10px; border-radius: 12px; font-size: 13px; font-weight: bold;">قيد الانتظار ⏳</span>';
+                }
+
+                tr.innerHTML = `
+                    <td style="padding: 12px;">${idx + 1}</td>
+                    <td style="padding: 12px; font-weight: bold;" dir="ltr">${user.email}</td>
+                    <td style="padding: 12px; font-weight: bold;" dir="ltr">${user.phone || '-'}</td>
+                    <td style="padding: 12px;">${dateFormatted}</td>
+                    <td style="padding: 12px;">${statusBadge}</td>
+                    <td style="padding: 12px; display: flex; gap: 8px;">
+                        <button onclick="updateUserStatus('${user.id}', 'approved')" class="btn-success" style="padding: 6px 12px; font-size: 13px; margin: 0; width: auto;"><i class="fa-solid fa-check"></i> موافقة (تفعيل)</button>
+                        <button onclick="updateUserStatus('${user.id}', 'rejected')" class="btn-danger" style="padding: 6px 12px; font-size: 13px; margin: 0; width: auto;"><i class="fa-solid fa-ban"></i> رفض (تعطيل)</button>
+                        <button onclick="deleteUserApproval('${user.id}')" style="background: #6c757d; color: white; padding: 6px 12px; font-size: 13px; margin: 0; border: none; border-radius: 4px; cursor: pointer;"><i class="fa-solid fa-trash"></i> حذف</button>
+                    </td>
+                `;
+                list.appendChild(tr);
+            });
+        } catch (err) {
+            console.error("Error loading approvals:", err);
+            list.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: red;">فشل تحميل الحسابات: ' + err.message + '</td></tr>';
+        }
+    }
+
+    window.updateUserStatus = async function(id, status) {
+        try {
+            const { error } = await supabaseClient
+                .from('user_approvals')
+                .update({ status: status })
+                .eq('id', id);
+
+            if (error) throw error;
+            showToast(status === 'approved' ? 'تم تفعيل الحساب والموافقة بنجاح!' : 'تم تعطيل/رفض الحساب بنجاح!');
+            loadUserApprovals();
+        } catch (err) {
+            alert("خطأ في تحديث الحالة: " + err.message);
+        }
+    }
+
+    window.deleteUserApproval = async function(id) {
+        if (!confirm("هل أنت متأكد من حذف هذا الحساب من سجل الموافقات؟")) return;
+        try {
+            const { error } = await supabaseClient
+                .from('user_approvals')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            showToast('تم حذف السجل بنجاح!');
+            loadUserApprovals();
+        } catch (err) {
+            alert("خطأ في الحذف: " + err.message);
+        }
+    }
 
     window.addEventListener('DOMContentLoaded', () => {
         checkAuthStatus();

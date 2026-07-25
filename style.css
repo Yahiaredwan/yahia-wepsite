@@ -205,6 +205,20 @@ a:hover {
     font-size: 0.95rem;
     font-weight: 600;
     border: 1px solid rgba(184, 156, 101, 0.3);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+}
+
+.badge:hover {
+    background-color: var(--primary);
+    color: var(--dark-bg);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(184, 156, 101, 0.25);
+}
+
+.badge:active {
+    transform: translateY(0);
 }
 
 .hero-cta-container {

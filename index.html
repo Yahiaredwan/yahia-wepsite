@@ -175,9 +175,9 @@
                 قبل وبعد التهديد.</p>
 
             <div class="badges">
-                <span class="badge">محور قانوني</span>
-                <span class="badge">محور أمن سيبراني</span>
-                <span class="badge">محور نفسي</span>
+                <span class="badge" onclick="document.getElementById('courses')?.scrollIntoView({behavior: 'smooth'})">محور قانوني</span>
+                <span class="badge" onclick="document.getElementById('course-3-4')?.scrollIntoView({behavior: 'smooth'})">محور أمن سيبراني</span>
+                <span class="badge" onclick="document.getElementById('course-5')?.scrollIntoView({behavior: 'smooth'})">محور نفسي</span>
             </div>
 
 
@@ -625,7 +625,7 @@
             </ul>
             <p class="text-light-gray" style="font-weight: bold;">عرض الإطلاق يمنحك خصمًا يصل إلى 84%. هذا العرض متاح
                 لأول 100 مشترك فقط.</p>
-            <a href="#pricing-new" class="btn-gold" id="dyn_hero_cta_text">احجز مكانك ضمن أول 100 مشترك</a>
+            <a href="#pricing-new" class="btn-gold" id="dyn_hero_cta_text" onclick="document.getElementById('pricing-new')?.scrollIntoView({behavior: 'smooth'}); return false;">احجز مكانك ضمن أول 100 مشترك</a>
             <div class="img-grid-2">
                 <div class="img-placeholder"><img id="dyn_hero_img_1" src="" style="display:none;"></div>
                 <div class="img-placeholder"><img id="dyn_hero_img_2" src="" style="display:none;"></div>
@@ -1376,24 +1376,7 @@
                 ticking = false;
             }
 
-            const navMenu = document.getElementById('nav-menu');
-            const mobileMenu = document.getElementById('mobile-menu');
 
-            navLinks.forEach(link => {
-                link.addEventListener('click', () => {
-                    if (navMenu && navMenu.classList.contains('active')) {
-                        navMenu.classList.remove('active');
-                        if (mobileMenu) mobileMenu.classList.remove('active');
-                    }
-                });
-            });
-
-            if (mobileMenu && navMenu) {
-                mobileMenu.addEventListener('click', () => {
-                    navMenu.classList.toggle('active');
-                    mobileMenu.classList.toggle('active');
-                });
-            }
 
             window.addEventListener('scroll', () => {
                 if (!ticking) {
@@ -1684,112 +1667,162 @@
                 });
 
                 // 1. Meta / Facebook Pixel
-                if (pixels.pixel_fb_enabled === 'true' && pixels.pixel_fb_id && pixels.pixel_fb_id.trim()) {
-                    const fbId = pixels.pixel_fb_id.trim();
-                    if (!window.fbq) {
-                        !function (f, b, e, v, n, t, s) {
-                            if (f.fbq) return; n = f.fbq = function () {
-                                n.callMethod ?
-                                n.callMethod.apply(n, arguments) : n.queue.push(arguments)
-                            };
-                            if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = '2.0';
-                            n.queue = []; t = b.createElement(e); t.async = !0;
-                            t.src = v; s = b.getElementsByTagName(e)[0];
-                            s.parentNode.insertBefore(t, s)
-                        }(window, document, 'script',
-                            'https://connect.facebook.net/en_US/fbevents.js');
-                        fbq('init', fbId);
-                        fbq('track', 'PageView');
+                try {
+                    if (pixels.pixel_fb_enabled === 'true' && pixels.pixel_fb_id && pixels.pixel_fb_id.trim()) {
+                        const fbId = pixels.pixel_fb_id.trim();
+                        if (!window.fbq) {
+                            !function (f, b, e, v, n, t, s) {
+                                if (f.fbq) return; n = f.fbq = function () {
+                                    n.callMethod ?
+                                    n.callMethod.apply(n, arguments) : n.queue.push(arguments)
+                                };
+                                if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = '2.0';
+                                n.queue = []; t = b.createElement(e); t.async = !0;
+                                t.src = v; s = b.getElementsByTagName(e)[0];
+                                s.parentNode.insertBefore(t, s)
+                            }(window, document, 'script',
+                                'https://connect.facebook.net/en_US/fbevents.js');
+                            fbq('init', fbId);
+                            fbq('track', 'PageView');
+                        }
                     }
+                } catch (fbErr) {
+                    console.error('FB Pixel Init Error:', fbErr);
                 }
 
                 // 2. TikTok Pixel
-                if (pixels.pixel_tiktok_enabled === 'true' && pixels.pixel_tiktok_id && pixels.pixel_tiktok_id.trim()) {
-                    const ttId = pixels.pixel_tiktok_id.trim();
-                    if (!window.ttq) {
-                        !function (w, d, t) {
-                            w.TiktokAnalyticsObject = t; var ttq = w[t] = w[t] || []; ttq.methods = ["page", "track", "identify", "instances", "debug", "on", "off", "once", "ready", "alias", "group", "enableCookie", "addCondition"], ttq.setAndDefer = function (t, e) { t[e] = function () { t.push([e].concat(Array.prototype.slice.call(arguments, 0))) } }; for (var e = 0; e < ttq.methods.length; e++)ttq.setAndDefer(ttq, ttq.methods[e]); ttq.instance = function (t) { for (var e = ttq.methods[t] || [], n = 0; n < ttq.methods.length; n++)ttq.setAndDefer(e, ttq.methods[n]); return e }, ttq.load = function (e, n) { var i = "https://analytics.tiktok.com/i18n/pixel/events.js"; ttq._i = ttq._i || {}, ttq._i[e] = [], ttq._i[e]._u = i, ttq._t = ttq._t || {}, ttq._t[e] = +new Date, ttq._o = ttq._o || {}, ttq._o[e] = n || {}; var o = document.createElement("script"); o.type = "text/javascript", o.async = !0, o.src = i + "?sdkid=" + e + "&lib=" + t; var a = document.getElementsByTagName("script")[0]; a.parentNode.insertBefore(o, a) };
-                            ttq.load(ttId);
-                            ttq.page();
-                        }(window, document, 'ttq');
+                try {
+                    if (pixels.pixel_tiktok_enabled === 'true' && pixels.pixel_tiktok_id && pixels.pixel_tiktok_id.trim()) {
+                        const ttId = pixels.pixel_tiktok_id.trim();
+                        if (!window.ttq) {
+                            !function (w, d, t) {
+                                w.TiktokAnalyticsObject = t; var ttq = w[t] = w[t] || []; ttq.methods = ["page", "track", "identify", "instances", "debug", "on", "off", "once", "ready", "alias", "group", "enableCookie", "addCondition"], ttq.setAndDefer = function (t, e) { t[e] = function () { t.push([e].concat(Array.prototype.slice.call(arguments, 0))) } }; for (var e = 0; e < ttq.methods.length; e++)ttq.setAndDefer(ttq, ttq.methods[e]); ttq.instance = function (t) { for (var e = ttq.methods[t] || [], n = 0; n < ttq.methods.length; n++)ttq.setAndDefer(e, ttq.methods[n]); return e }, ttq.load = function (e, n) { var i = "https://analytics.tiktok.com/i18n/pixel/events.js"; ttq._i = ttq._i || {}, ttq._i[e] = [], ttq._i[e]._u = i, ttq._t = ttq._t || {}, ttq._t[e] = +new Date, ttq._o = ttq._o || {}, ttq._o[e] = n || {}; var o = document.createElement("script"); o.type = "text/javascript", o.async = !0, o.src = i + "?sdkid=" + e + "&lib=" + t; var a = document.getElementsByTagName("script")[0]; a.parentNode.insertBefore(o, a) };
+                                ttq.load(ttId);
+                                ttq.page();
+                            }(window, document, 'ttq');
+                        }
                     }
+                } catch (ttErr) {
+                    console.error('TikTok Pixel Init Error:', ttErr);
                 }
 
                 // 3. Snapchat Pixel
-                if (pixels.pixel_snapchat_enabled === 'true' && pixels.pixel_snapchat_id && pixels.pixel_snapchat_id.trim()) {
-                    const snapId = pixels.pixel_snapchat_id.trim();
-                    if (!window.snaptr) {
-                        (function (e, t, n) {
-                            if (e.snaptr) return; var a = e.snaptr = function () { a.handleRequest ? a.handleRequest.apply(a, arguments) : a.queue.push(arguments) };
-                            a.queue = []; var s = 'script'; r = t.createElement(s); r.async = !0;
-                            r.src = n; var u = t.getElementsByTagName(s)[0];
-                            u.parentNode.insertBefore(r, u);
-                        })(window, document, 'https://sc-static.net/scevent.min.js');
-                        snaptr('init', snapId);
-                        snaptr('track', 'PAGE_VIEW');
+                try {
+                    if (pixels.pixel_snapchat_enabled === 'true' && pixels.pixel_snapchat_id && pixels.pixel_snapchat_id.trim()) {
+                        const snapId = pixels.pixel_snapchat_id.trim();
+                        if (!window.snaptr) {
+                            (function (e, t, n) {
+                                if (e.snaptr) return; var a = e.snaptr = function () { a.handleRequest ? a.handleRequest.apply(a, arguments) : a.queue.push(arguments) };
+                                a.queue = []; var s = 'script'; var r = t.createElement(s); r.async = !0;
+                                r.src = n; var u = t.getElementsByTagName(s)[0];
+                                if (u && u.parentNode) u.parentNode.insertBefore(r, u);
+                            })(window, document, 'https://sc-static.net/scevent.min.js');
+                            snaptr('init', snapId);
+                            snaptr('track', 'PAGE_VIEW');
+                        }
                     }
+                } catch (snapErr) {
+                    console.error('Snapchat Pixel Init Error:', snapErr);
                 }
 
                 // 4. Google Analytics / Tag Manager
-                if (pixels.pixel_ga_enabled === 'true' && pixels.pixel_ga_id && pixels.pixel_ga_id.trim()) {
-                    const gaId = pixels.pixel_ga_id.trim();
-                    if (gaId.startsWith('GTM-')) {
-                        if (!document.getElementById('_gtm_script')) {
-                            (function (w, d, s, l, i) {
-                                w[l] = w[l] || []; w[l].push({
-                                    'gtm.start':
-                                        new Date().getTime(), event: 'gtm.js'
-                                }); var f = d.getElementsByTagName(s)[0],
-                                    j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.id = '_gtm_script'; j.src =
-                                        'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
-                            })(window, document, 'script', 'dataLayer', gaId);
-                        }
-                    } else {
-                        if (!document.getElementById('_ga_script')) {
-                            const script = document.createElement('script');
-                            script.id = '_ga_script';
-                            script.async = true;
-                            script.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
-                            document.head.appendChild(script);
-                            window.dataLayer = window.dataLayer || [];
-                            function gtag() { dataLayer.push(arguments); }
-                            window.gtag = gtag;
-                            gtag('js', new Date());
-                            gtag('config', gaId);
+                try {
+                    if (pixels.pixel_ga_enabled === 'true' && pixels.pixel_ga_id && pixels.pixel_ga_id.trim()) {
+                        const gaId = pixels.pixel_ga_id.trim();
+                        if (gaId.startsWith('GTM-')) {
+                            if (!document.getElementById('_gtm_script')) {
+                                (function (w, d, s, l, i) {
+                                    w[l] = w[l] || []; w[l].push({
+                                        'gtm.start':
+                                            new Date().getTime(), event: 'gtm.js'
+                                    }); var f = d.getElementsByTagName(s)[0],
+                                        j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.id = '_gtm_script'; j.src =
+                                            'https://www.googletagmanager.com/gtm.js?id=' + i + dl; if (f && f.parentNode) f.parentNode.insertBefore(j, f);
+                                })(window, document, 'script', 'dataLayer', gaId);
+                            }
+                        } else {
+                            if (!document.getElementById('_ga_script')) {
+                                const script = document.createElement('script');
+                                script.id = '_ga_script';
+                                script.async = true;
+                                script.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
+                                document.head.appendChild(script);
+                                window.dataLayer = window.dataLayer || [];
+                                function gtag() { dataLayer.push(arguments); }
+                                window.gtag = gtag;
+                                gtag('js', new Date());
+                                gtag('config', gaId);
+                            }
                         }
                     }
+                } catch (gaErr) {
+                    console.error('GA Init Error:', gaErr);
                 }
 
                 // 5. Google Ads Pixel
-                if (pixels.pixel_gads_enabled === 'true' && pixels.pixel_gads_id && pixels.pixel_gads_id.trim()) {
-                    const gadsId = pixels.pixel_gads_id.trim();
-                    if (!document.getElementById('_gads_script')) {
-                        const script = document.createElement('script');
-                        script.id = '_gads_script';
-                        script.async = true;
-                        script.src = 'https://www.googletagmanager.com/gtag/js?id=' + gadsId;
-                        document.head.appendChild(script);
-                        window.dataLayer = window.dataLayer || [];
-                        if (!window.gtag) {
-                            function gtag() { dataLayer.push(arguments); }
-                            window.gtag = gtag;
-                            gtag('js', new Date());
+                try {
+                    if (pixels.pixel_gads_enabled === 'true' && pixels.pixel_gads_id && pixels.pixel_gads_id.trim()) {
+                        const gadsId = pixels.pixel_gads_id.trim();
+                        if (!document.getElementById('_gads_script')) {
+                            const script = document.createElement('script');
+                            script.id = '_gads_script';
+                            script.async = true;
+                            script.src = 'https://www.googletagmanager.com/gtag/js?id=' + gadsId;
+                            document.head.appendChild(script);
+                            window.dataLayer = window.dataLayer || [];
+                            if (!window.gtag) {
+                                function gtag() { dataLayer.push(arguments); }
+                                window.gtag = gtag;
+                                gtag('js', new Date());
+                            }
+                            gtag('config', gadsId);
                         }
-                        gtag('config', gadsId);
                     }
+                } catch (gadsErr) {
+                    console.error('GAds Init Error:', gadsErr);
                 }
 
                 // 6. Custom Code
-                if (pixels.pixel_custom_enabled === 'true' && pixels.pixel_custom_code && pixels.pixel_custom_code.trim()) {
-                    if (!document.getElementById('_custom_pixel_injected')) {
-                        const container = document.createElement('div');
-                        container.id = '_custom_pixel_injected';
-                        container.style.display = 'none';
-                        const range = document.createRange();
-                        const fragment = range.createContextualFragment(pixels.pixel_custom_code.trim());
-                        container.appendChild(fragment);
-                        document.head.appendChild(container);
+                try {
+                    if (pixels.pixel_custom_enabled === 'true' && pixels.pixel_custom_code && pixels.pixel_custom_code.trim()) {
+                        let isValid = true;
+                        try {
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(pixels.pixel_custom_code, 'text/html');
+                            const scripts = doc.querySelectorAll('script');
+                            for (let script of scripts) {
+                                if (script.textContent && script.textContent.trim()) {
+                                    new Function(script.textContent);
+                                }
+                            }
+                        } catch (syntaxErr) {
+                            console.warn('Syntax error detected in custom pixel code:', syntaxErr);
+                            isValid = false;
+                            
+                            // Auto-heal: Clear the invalid code from Supabase and cache
+                            localStorage.removeItem('sc_content_v1');
+                            if (supabaseClient) {
+                                supabaseClient.from('site_content')
+                                    .update({ content: '' })
+                                    .eq('id', 'pixel_custom_code')
+                                    .then(() => {
+                                        console.log('Cleared invalid custom pixel code from database.');
+                                    }).catch(() => {});
+                            }
+                        }
+
+                        if (isValid && !document.getElementById('_custom_pixel_injected')) {
+                            const container = document.createElement('div');
+                            container.id = '_custom_pixel_injected';
+                            container.style.display = 'none';
+                            const range = document.createRange();
+                            const fragment = range.createContextualFragment(pixels.pixel_custom_code.trim());
+                            container.appendChild(fragment);
+                            document.head.appendChild(container);
+                        }
                     }
+                } catch (customErr) {
+                    console.error('Custom Pixel Code Injection Error:', customErr);
                 }
             }
 
@@ -2850,12 +2883,14 @@
         });
 
         // Unregister any existing service workers to ensure fresh asset delivery and prevent loading delays
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(registrations => {
-                for (let registration of registrations) {
-                    registration.unregister();
-                }
-            });
+        if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
+            try {
+                navigator.serviceWorker.getRegistrations().then(registrations => {
+                    for (let registration of registrations) {
+                        registration.unregister();
+                    }
+                }).catch(err => {});
+            } catch (swErr) {}
         }
     </script>
 </body>

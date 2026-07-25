@@ -42,8 +42,8 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Skip non-GET requests and Supabase API calls (let client-side handle Supabase caching/Edge functions)
-  if (event.request.method !== 'GET' || url.hostname.includes('supabase.co')) {
+  // Skip non-GET requests, non-http/https protocols, and Supabase API calls (let client-side handle Supabase caching/Edge functions)
+  if (event.request.method !== 'GET' || !url.protocol.startsWith('http') || url.hostname.includes('supabase.co')) {
     return;
   }
 

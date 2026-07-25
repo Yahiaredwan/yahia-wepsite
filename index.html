@@ -2260,8 +2260,8 @@
                     // 1. Check if user is admin first
                     let isAdmin = false;
                     try {
-                        const { data: adminData } = await supabaseClient.from('admins').select('*').eq('email', userEmail).single();
-                        if (adminData) {
+                        const { data: adminData } = await supabaseClient.from('admins').select('*').eq('email', userEmail);
+                        if (adminData && adminData.length > 0) {
                             isAdmin = true;
                         }
                     } catch (err) { }

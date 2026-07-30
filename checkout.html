@@ -560,14 +560,51 @@
                     if (pmContainer) {
                         pmContainer.innerHTML = '';
                         paymentMethods.forEach((method, idx) => {
+                            const isOnline = method.number && (method.number.toLowerCase() === 'online' || method.number.toLowerCase() === 'fawaterak');
                             pmContainer.innerHTML += `
                                 <label class="payment-card">
-                                    <input type="radio" name="payment_method" value="${method.name}" ${idx === 0 ? 'checked' : ''}>
-                                    <span class="text-white font-medium">${method.name} - رقم: <span dir="ltr">${method.number}</span></span>
+                                    <input type="radio" name="payment_method" value="${method.name}" data-online="${isOnline}" ${idx === 0 ? 'checked' : ''}>
+                                    <span class="text-white font-medium">${method.name} ${isOnline ? '' : `- رقم: <span dir="ltr">${method.number}</span>`}</span>
                                 </label>
                             `;
                         });
-                    }
+
+                        // Toggle manual fields based on online status
+                        const toggleFields = () => {
+                            const selected = pmContainer.querySelector('input[name="payment_method"]:checked');
+                            const isOnline = selected && selected.getAttribute('data-online') === 'true';
+                            
+                            const transferInput = document.getElementById('transferNumber');
+                            const receiptInput = document.getElementById('receipt');
+                            
+                            if (transferInput) {
+                                transferInput.required = !isOnline;
+                                const group = transferInput.closest('.form-group');
+                                if (group) group.style.display = isOnline ? 'none' : 'block';
+                            }
+                            if (receiptInput) {
+                                receiptInput.required = !isOnline;
+                                const group = receiptInput.closest('.form-group');
+                                if (group) group.style.display = isOnline ? 'none' : 'block';
+                            }
+                            
+                            const btn = document.getElementById('submitSubscriptionBtn');
+                            if (btn) {
+                                btn.textContent = isOnline ? 'الانتقال إلى الدفع الإلكتروني' : 'تأكيد التسجيل وإرسال الإثبات';
+                            }
+                        };
+
+                        pmContainer.addEventListener('change', toggleFields);
+                        toggleFields(); // Initial run
+                }
+
+                // Check URL params for Fawaterak redirection status
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('status') === 'success') {
+                    const successModal = document.getElementById('whatsappSuccessModal');
+                    if (successModal) successModal.classList.add('active');
+                } else if (urlParams.get('status') === 'fail') {
+                    showToast('فشلت عملية الدفع الإلكتروني. يرجى المحاولة مرة أخرى أو اختيار طريقة أخرى.', 'error');
                 }
             } catch (err) {
                 console.error("Error loading checkout dynamic content:", err);
@@ -614,45 +651,98 @@
 
                 btn.textContent = 'جاري إرسال الطلب...';
 
-                if (fileInput.files.length === 0) {
-                    showToast('الرجاء اختيار صورة وصل التحويل.');
-                    btn.textContent = originalText;
-                    btn.disabled = false;
-                    return;
+                const selectedRadio = document.querySelector('input[name="payment_method"]:checked');
+                const isOnline = selectedRadio && selectedRadio.getAttribute('data-online') === 'true';
+
+                let receiptUrl = '';
+                if (!isOnline) {
+                    if (fileInput.files.length === 0) {
+                        showToast('الرجاء اختيار صورة وصل التحويل.');
+                        btn.textContent = originalText;
+                        btn.disabled = false;
+                        return;
+                    }
+
+                    const file = fileInput.files[0];
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+                    // Upload receipt to Supabase Storage
+                    const { data: uploadData, error: uploadError } = await supabaseClient
+                        .storage
+                        .from('receipts')
+                        .upload(`public/${fileName}`, file, {
+                            cacheControl: '3600',
+                            upsert: false
+                        });
+
+                    if (uploadError) {
+                        throw new Error('فشل رفع صورة الوصل: تأكد من أن مجلد الاستقبال متاح.');
+                    }
+
+                    // Get public URL
+                    const { data: publicUrlData } = supabaseClient.storage.from('receipts').getPublicUrl(`public/${fileName}`);
+                    receiptUrl = publicUrlData.publicUrl;
                 }
-
-                const file = fileInput.files[0];
-                const fileExt = file.name.split('.').pop();
-                const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-
-                // Upload receipt to Supabase Storage
-                const { data: uploadData, error: uploadError } = await supabaseClient
-                    .storage
-                    .from('receipts')
-                    .upload(`public/${fileName}`, file, {
-                        cacheControl: '3600',
-                        upsert: false
-                    });
-
-                if (uploadError) {
-                    throw new Error('فشل رفع صورة الوصل: تأكد من أن مجلد الاستقبال متاح.');
-                }
-
-                // Get public URL
-                const { data: publicUrlData } = supabaseClient.storage.from('receipts').getPublicUrl(`public/${fileName}`);
-                const receiptUrl = publicUrlData.publicUrl;
 
                 // Insert subscription
-                const { error: insertError } = await supabaseClient.from('subscriptions').insert([{
+                const subscriptionPayload = {
                     full_name: fullName,
                     phone: phone,
                     payment_method: paymentMethod,
-                    transfer_number: transferNumber,
-                    receipt_url: receiptUrl
-                }]);
+                    status: 'pending'
+                };
+
+                if (!isOnline) {
+                    subscriptionPayload.transfer_number = transferNumber;
+                    subscriptionPayload.receipt_url = receiptUrl;
+                }
+
+                const { data: subData, error: insertError } = await supabaseClient
+                    .from('subscriptions')
+                    .insert([subscriptionPayload])
+                    .select('id')
+                    .single();
 
                 if (insertError) {
                     throw new Error('فشل في تسجيل الطلب: ' + insertError.message);
+                }
+
+                if (isOnline) {
+                    btn.textContent = 'جاري تحويلك لبوابة الدفع...';
+
+                    // Get user email if signed in
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    const email = session?.user?.email || "";
+
+                    // Get cart total from DOM
+                    const cartTotalText = document.getElementById('dyn_cta_new_price')?.textContent || "700";
+                    const cartTotal = parseFloat(cartTotalText.replace(/[^0-9.]/g, '')) || 700;
+
+                    const payRes = await supabaseClient.functions.invoke('create-fawaterak-payment', {
+                        body: {
+                            subscriptionId: subData.id,
+                            cartTotal: cartTotal,
+                            customer: {
+                                first_name: fullName.split(' ')[0] || "Customer",
+                                last_name: fullName.split(' ').slice(1).join(' ') || "Fawaterak",
+                                email: email || "customer@example.com",
+                                phone: phone
+                            }
+                        }
+                    });
+
+                    if (payRes.error) {
+                        throw new Error('فشل بدء عملية الدفع الإلكتروني: ' + (payRes.error.message || payRes.error));
+                    }
+
+                    const checkoutUrl = payRes.data?.url;
+                    if (checkoutUrl) {
+                        window.location.href = checkoutUrl;
+                        return; // Redirecting
+                    } else {
+                        throw new Error('فشل الحصول على رابط الدفع الإلكتروني.');
+                    }
                 }
 
                 // Email notification

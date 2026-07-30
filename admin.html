@@ -508,6 +508,29 @@
             <button class="btn-add" onclick="addPaymentMethod()"><i class="fa-solid fa-plus"></i> إضافة طريقة دفع</button>
             <div id="paymentMethodsList"></div>
             <button class="btn-success" onclick="savePaymentMethods()">حفظ طرق الدفع</button>
+
+            <hr style="margin: 30px 0; border: 1px solid #eee;">
+            <h2>إعدادات بوابة الدفع الإلكتروني (فواتيرك - Fawaterak)</h2>
+            <form id="fawaterakSettingsForm">
+                <div class="two-cols">
+                    <div class="form-group">
+                        <label>معرف العميل (Client ID)</label>
+                        <input type="text" id="fawaterak_client_id" placeholder="أدخل Client ID الخاص بفواتيرك" dir="ltr">
+                    </div>
+                    <div class="form-group">
+                        <label>الرمز السري للعميل (Client Secret)</label>
+                        <input type="password" id="fawaterak_client_secret" placeholder="أدخل Client Secret الخاص بفواتيرك" dir="ltr">
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>بيئة التشغيل (Environment)</label>
+                        <select id="fawaterak_env" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit;">
+                            <option value="staging">تجريبية (Staging)</option>
+                            <option value="live">حقيقية (Live)</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn-success" style="background: #17a2b8; margin-top: 15px;">حفظ إعدادات فواتيرك</button>
+            </form>
         </div>
 
         <!-- Social Media Pixels & Tracking Management -->
@@ -1004,6 +1027,18 @@
             const updates = Array.from(inputs).map(input => ({ id: input.id, content: input.value, type: 'text' }));
             const { error } = await supabaseClient.from('site_content').upsert(updates);
             if (error) alert("خطأ في حفظ إعدادات البكسل: " + error.message); else showToast('تم حفظ إعدادات بكسل السوشيال ميديا بنجاح!');
+        });
+    }
+
+    // --- Save Fawaterak Settings ---
+    const fawaterakFormEl = document.getElementById('fawaterakSettingsForm');
+    if (fawaterakFormEl) {
+        fawaterakFormEl.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const inputs = e.target.querySelectorAll('input[type="text"], input[type="password"], select');
+            const updates = Array.from(inputs).map(input => ({ id: input.id, content: input.value, type: 'text' }));
+            const { error } = await supabaseClient.from('site_content').upsert(updates);
+            if (error) alert("خطأ في حفظ إعدادات فواتيرك: " + error.message); else showToast('تم حفظ إعدادات بوابة فواتيرك بنجاح!');
         });
     }
 

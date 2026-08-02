@@ -92,9 +92,9 @@ Deno.serve(async (req) => {
     const originUrl = reqOrigin.endsWith("/") ? reqOrigin.slice(0, -1) : reqOrigin;
 
     const redirectionUrls = {
-      successUrl: `${originUrl}/checkout.html?status=success`,
-      failUrl: `${originUrl}/checkout.html?status=fail`,
-      pendingUrl: `${originUrl}/checkout.html?status=pending`,
+      successUrl: `${originUrl}/index.html?status=success`,
+      failUrl: `${originUrl}/index.html?status=fail`,
+      pendingUrl: `${originUrl}/index.html?status=pending`,
       webhookUrl: `${cleanedSupabaseUrl}/functions/v1/fawaterak-webhook`,
     };
 

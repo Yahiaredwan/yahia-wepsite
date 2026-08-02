@@ -2893,6 +2893,46 @@
             } catch (swErr) {}
         }
     </script>
-</body>
+    <!-- Payment Status Modals -->
+    <div class="modal-overlay" id="whatsappSuccessModal">
+        <div class="modal-box" style="text-align: center; padding: 40px 20px;">
+            <button class="close-modal" id="closeWhatsappModal" onclick="document.getElementById('whatsappSuccessModal').classList.remove('active')">&times;</button>
+            <div style="font-size: 60px; color: #25D366; margin-bottom: 20px;">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <h2 style="margin-top: 0;">تم الدفع بنجاح! 🎉</h2>
+            <p style="font-size: 18px; margin-bottom: 30px;">
+                تم استلام دفعتك بنجاح. إذا لم يتم تفعيل اشتراكك تلقائياً خلال دقائق، يرجى التواصل معنا عبر الواتساب.
+            </p>
+            <a href="https://wa.me/201118388010" target="_blank" class="btn-primary wa_activation_link"
+                style="background: #25D366; border-color: #25D366; display: inline-flex; align-items: center; justify-content: center; gap: 10px; font-size: 18px; padding: 15px 30px; text-decoration: none;">
+                <i class="fa-brands fa-whatsapp"></i> تواصل عبر الواتساب الآن
+            </a>
+        </div>
+    </div>
 
+    <script>
+        // Check URL params for Fawaterak redirection status
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const status = urlParams.get('status');
+            
+            if (status === 'success') {
+                const successModal = document.getElementById('whatsappSuccessModal');
+                if (successModal) successModal.classList.add('active');
+                
+                // Clean the URL without refreshing
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else if (status === 'fail') {
+                if(typeof showToast === 'function') {
+                    showToast('فشلت عملية الدفع الإلكتروني. يرجى المحاولة مرة أخرى أو اختيار طريقة أخرى.', 'error');
+                } else {
+                    alert('فشلت عملية الدفع الإلكتروني. يرجى المحاولة مرة أخرى.');
+                }
+                // Clean the URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        });
+    </script>
+</body>
 </html>

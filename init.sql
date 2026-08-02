@@ -206,7 +206,7 @@ DROP POLICY IF EXISTS "Allow public update access on site_content" ON site_conte
 DROP POLICY IF EXISTS "Allow public insert access on site_content" ON site_content;
 DROP POLICY IF EXISTS "Allow public delete access on site_content" ON site_content;
 
-CREATE POLICY "Allow public read access on site_content" ON site_content FOR SELECT USING (true);
+CREATE POLICY "Allow public read access on site_content" ON site_content FOR SELECT USING (id NOT IN ('fawaterak_client_secret', 'fawaterak_client_id', 'fawaterak_env'));
 CREATE POLICY "Allow public update access on site_content" ON site_content FOR UPDATE USING (true);
 CREATE POLICY "Allow public insert access on site_content" ON site_content FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public delete access on site_content" ON site_content FOR DELETE USING (true);
@@ -298,3 +298,7 @@ CREATE POLICY "Allow public select on user_approvals" ON user_approvals FOR SELE
 CREATE POLICY "Allow public insert on user_approvals" ON user_approvals FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow public update on user_approvals" ON user_approvals FOR UPDATE USING (true);
 CREATE POLICY "Allow public delete on user_approvals" ON user_approvals FOR DELETE USING (true);
+
+-- 12. Performance Indexes (For Webhooks and High Traffic)
+CREATE INDEX IF NOT EXISTS idx_subscriptions_transfer_number ON subscriptions(transfer_number);
+CREATE INDEX IF NOT EXISTS idx_user_approvals_phone ON user_approvals(phone);

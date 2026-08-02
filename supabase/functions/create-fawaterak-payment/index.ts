@@ -5,15 +5,26 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// In-memory cache to reduce DB queries during high traffic
+let siteContentCache: {
+  clientId?: string;
+  clientSecret?: string;
+  env?: string;
+  price?: number;
+  timestamp: number;
+} | null = null;
+
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const { subscriptionId, cartTotal, customer } = await req.json();
+    const { subscriptionId, customer } = await req.json();
 
-    if (!subscriptionId || !cartTotal || !customer) {
+    if (!subscriptionId || !customer) {
       throw new Error("Missing required body parameters.");
     }
 
@@ -23,25 +34,42 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Get credentials from Env or DB
-    let clientId = Deno.env.get("FAWATERAK_CLIENT_ID") || "";
-    let clientSecret = Deno.env.get("FAWATERAK_CLIENT_SECRET") || "";
-    let fawaterakEnv = Deno.env.get("FAWATERAK_ENV") || "";
+    // Get credentials and price securely from Cache or DB
+    const now = Date.now();
+    if (!siteContentCache || now - siteContentCache.timestamp > CACHE_TTL) {
+      let envClientId = Deno.env.get("FAWATERAK_CLIENT_ID") || "";
+      let envClientSecret = Deno.env.get("FAWATERAK_CLIENT_SECRET") || "";
+      let envFawaterak = Deno.env.get("FAWATERAK_ENV") || "";
+      let defaultPrice = 700;
 
-    if (!clientId || !clientSecret || !fawaterakEnv) {
       const { data: dbContent } = await supabase
         .from("site_content")
         .select("id, content")
-        .in("id", ["fawaterak_client_id", "fawaterak_client_secret", "fawaterak_env"]);
+        .in("id", ["fawaterak_client_id", "fawaterak_client_secret", "fawaterak_env", "cta_new_price"]);
 
       if (dbContent) {
         dbContent.forEach((item) => {
-          if (item.id === "fawaterak_client_id" && item.content) clientId = item.content;
-          if (item.id === "fawaterak_client_secret" && item.content) clientSecret = item.content;
-          if (item.id === "fawaterak_env" && item.content) fawaterakEnv = item.content;
+          if (item.id === "fawaterak_client_id" && item.content) envClientId = item.content;
+          if (item.id === "fawaterak_client_secret" && item.content) envClientSecret = item.content;
+          if (item.id === "fawaterak_env" && item.content) envFawaterak = item.content;
+          if (item.id === "cta_new_price" && item.content) {
+            // Extract numbers only
+            const parsed = parseFloat(item.content.replace(/[^0-9.]/g, ''));
+            if (!isNaN(parsed) && parsed > 0) defaultPrice = parsed;
+          }
         });
       }
+      
+      siteContentCache = {
+        clientId: envClientId,
+        clientSecret: envClientSecret,
+        env: envFawaterak,
+        price: defaultPrice,
+        timestamp: now
+      };
     }
+
+    const { clientId, clientSecret, env: fawaterakEnv, price: realCartTotal } = siteContentCache;
 
     // Default env to staging if not specified
     if (!fawaterakEnv) {
@@ -99,7 +127,7 @@ Deno.serve(async (req) => {
     };
 
     const transactionPayload = {
-      cartTotal: cartTotal.toString(),
+      cartTotal: realCartTotal.toString(),
       currency: "EGP",
       customer: {
         first_name: customer.first_name || "Customer",
@@ -110,7 +138,7 @@ Deno.serve(async (req) => {
       cartItems: [
         {
           name: "باقة دورة الحماية من الابتزاز الإلكتروني",
-          price: cartTotal.toString(),
+          price: realCartTotal.toString(),
           quantity: "1",
         },
       ],

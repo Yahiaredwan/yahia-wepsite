@@ -138,7 +138,10 @@
                                     document.addEventListener('DOMContentLoaded', () => {
                                         document.getElementById('logoutBtn')?.addEventListener('click', async (e) => {
                                             e.preventDefault();
+                                            e.target.textContent = 'جاري تسجيل الخروج...';
+                                            e.target.style.opacity = '0.5';
                                             await supabaseClient.auth.signOut();
+                                            localStorage.removeItem('sb-tiornpjjrtajnmgvoqfb-auth-token');
                                             location.reload();
                                         });
                                     });
@@ -1949,19 +1952,36 @@
             }
 
             try {
-                // Fetch site_content
-                const { data: contentData, error: contentError } = await supabaseClient.from('site_content').select('*');
+                // Fetch all data in parallel to eliminate lag/delay
+                const [
+                    contentRes,
+                    paymentRes,
+                    sectionsRes,
+                    featuresRes,
+                    trainersRes,
+                    curriculumRes,
+                    faqsRes
+                ] = await Promise.all([
+                    supabaseClient.from('site_content').select('*'),
+                    supabaseClient.from('payment_methods').select('*').order('order_index', { ascending: true }),
+                    supabaseClient.from('sections').select('*').eq('status', 'active').order('order_index', { ascending: true }),
+                    supabaseClient.from('features').select('*').order('order_index', { ascending: true }),
+                    supabaseClient.from('trainers').select('*').order('order_index', { ascending: true }),
+                    supabaseClient.from('curriculum').select('*').order('order_index', { ascending: true }),
+                    supabaseClient.from('faqs').select('*').order('order_index', { ascending: true })
+                ]);
+
+                // 1. Fetch site_content
+                const contentData = contentRes.data;
                 if (contentData) {
                     applyContentData(contentData);
-                    // ✅ Save to browser cache for next visit
                     setContentCache(contentData);
                 }
 
-                // Hide any image grids or containers that do not contain valid image sources
                 hideEmptyPlaceholders();
 
-                // Fetch payment_methods
-                const { data: paymentMethods } = await supabaseClient.from('payment_methods').select('*').order('order_index', { ascending: true });
+                // 2. Fetch payment_methods
+                const paymentMethods = paymentRes.data;
                 if (paymentMethods && paymentMethods.length > 0) {
                     const pmContainer = document.getElementById('dynamicPaymentMethods');
                     if (pmContainer) {
@@ -1977,33 +1997,24 @@
                     }
                 }
 
-                // Fetch active sections
-                try {
-                    const { data: activeSections } = await supabaseClient
-                        .from('sections')
-                        .select('*')
-                        .eq('status', 'active')
-                        .order('order_index', { ascending: true });
-
-                    const secSelect = document.getElementById('regSectionSelect');
-                    if (secSelect) {
-                        secSelect.innerHTML = '<option value="">-- اختر الشعبة المناسبة --</option>';
-                        if (activeSections && activeSections.length > 0) {
-                            activeSections.forEach(sec => {
-                                const opt = document.createElement('option');
-                                opt.value = sec.id;
-                                const sched = sec.schedule ? ` (${sec.schedule})` : '';
-                                opt.textContent = `${sec.name}${sched}`;
-                                secSelect.appendChild(opt);
-                            });
-                        }
+                // 3. Fetch active sections
+                const activeSections = sectionsRes.data;
+                const secSelect = document.getElementById('regSectionSelect');
+                if (secSelect) {
+                    secSelect.innerHTML = '<option value="">-- اختر الشعبة المناسبة --</option>';
+                    if (activeSections && activeSections.length > 0) {
+                        activeSections.forEach(sec => {
+                            const opt = document.createElement('option');
+                            opt.value = sec.id;
+                            const sched = sec.schedule ? ` (${sec.schedule})` : '';
+                            opt.textContent = `${sec.name}${sched}`;
+                            secSelect.appendChild(opt);
+                        });
                     }
-                } catch (secErr) {
-                    console.log('Sections fetch info:', secErr);
                 }
 
-                // Fetch features
-                const { data: featuresData } = await supabaseClient.from('features').select('*').order('order_index', { ascending: true });
+                // 4. Fetch features
+                const featuresData = featuresRes.data;
                 if (featuresData && featuresData.length > 0) {
                     const grid = document.getElementById('dyn_features_grid');
                     if (grid) {
@@ -2021,8 +2032,8 @@
                     }
                 }
 
-                // Fetch trainers
-                const { data: trainersData } = await supabaseClient.from('trainers').select('*').order('order_index', { ascending: true });
+                // 5. Fetch trainers
+                const trainersData = trainersRes.data;
                 if (trainersData && trainersData.length > 0) {
                     const grid = document.getElementById('dyn_trainers_grid');
                     if (grid) {
@@ -2044,8 +2055,8 @@
                     }
                 }
 
-                // Fetch curriculum
-                const { data: curriculumData } = await supabaseClient.from('curriculum').select('*').order('order_index', { ascending: true });
+                // 6. Fetch curriculum
+                const curriculumData = curriculumRes.data;
                 if (curriculumData && curriculumData.length > 0) {
                     const container = document.getElementById('dyn_curriculum_container');
                     if (container) {
@@ -2062,13 +2073,12 @@
                                 </div>
                             </div>`;
                         });
-                        // Re-initialize accordion logic for dynamically added elements
                         reinitAccordion();
                     }
                 }
 
-                // Fetch faqs
-                const { data: faqsData } = await supabaseClient.from('faqs').select('*').order('order_index', { ascending: true });
+                // 7. Fetch faqs
+                const faqsData = faqsRes.data;
                 if (faqsData && faqsData.length > 0) {
                     const grid = document.getElementById('dyn_faq_grid');
                     if (grid) {

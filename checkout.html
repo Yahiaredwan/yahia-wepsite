@@ -151,6 +151,12 @@
             background: rgba(255,255,255,0.02);
         }
 
+        .payment-card:has(input[type="radio"]:checked) {
+            border-color: var(--primary, #B89C65);
+            background: rgba(184, 156, 101, 0.05);
+            box-shadow: 0 0 10px rgba(184, 156, 101, 0.2);
+        }
+
         .payment-card:hover {
             border-color: var(--primary, #B89C65);
         }
@@ -487,6 +493,69 @@
             } catch (e) { }
         }
 
+        const PAYMENT_CACHE_KEY = 'sc_payment_v1';
+        
+        function getPaymentCache() {
+            try {
+                const raw = localStorage.getItem(PAYMENT_CACHE_KEY);
+                if (!raw) return null;
+                const { data, ts } = JSON.parse(raw);
+                if (Date.now() - ts < CONTENT_CACHE_TTL) return data;
+            } catch (e) { }
+            return null;
+        }
+
+        function setPaymentCache(data) {
+            try {
+                localStorage.setItem(PAYMENT_CACHE_KEY, JSON.stringify({ data, ts: Date.now() }));
+            } catch (e) { }
+        }
+
+        function renderPaymentMethods(paymentMethods) {
+            const pmContainer = document.getElementById('dynamicPaymentMethods');
+            if (pmContainer && paymentMethods && paymentMethods.length > 0) {
+                pmContainer.innerHTML = '';
+                paymentMethods.forEach((method, idx) => {
+                    const isOnline = method.number && (method.number.toLowerCase() === 'online' || method.number.toLowerCase() === 'fawaterak');
+                    pmContainer.innerHTML += `
+                        <label class="payment-card">
+                            <input type="radio" name="payment_method" value="${method.name}" data-online="${isOnline}" ${idx === 0 ? 'checked' : ''}>
+                            <span class="text-white font-medium">${method.name} ${isOnline ? '' : `- رقم: <span dir="ltr">${method.number}</span>`}</span>
+                        </label>
+                    `;
+                });
+
+                const toggleFields = () => {
+                    const selected = pmContainer.querySelector('input[name="payment_method"]:checked');
+                    const isOnline = selected && selected.getAttribute('data-online') === 'true';
+                    
+                    const transferInput = document.getElementById('transferNumber');
+                    const receiptInput = document.getElementById('receipt');
+                    
+                    if (transferInput) {
+                        transferInput.required = !isOnline;
+                        const group = transferInput.closest('.form-group');
+                        if (group) group.style.display = isOnline ? 'none' : 'block';
+                    }
+                    if (receiptInput) {
+                        receiptInput.required = !isOnline;
+                        const group = receiptInput.closest('.form-group');
+                        if (group) group.style.display = isOnline ? 'none' : 'block';
+                    }
+                    
+                    const btn = document.getElementById('submitSubscriptionBtn');
+                    if (btn) {
+                        btn.textContent = isOnline ? 'الانتقال إلى الدفع الإلكتروني' : 'تأكيد التسجيل وإرسال الإثبات';
+                    }
+                };
+
+                // Remove old listeners to prevent duplicates if called multiple times
+                pmContainer.removeEventListener('change', toggleFields);
+                pmContainer.addEventListener('change', toggleFields);
+                toggleFields();
+            }
+        }
+
         function applyContentData(contentData) {
             if (!contentData) return;
             let newPrice = '700';
@@ -530,6 +599,10 @@
             if (cachedContent) {
                 applyContentData(cachedContent);
             }
+            const cachedPayment = getPaymentCache();
+            if (cachedPayment) {
+                renderPaymentMethods(cachedPayment);
+            }
 
             try {
                 // Fetch all data in parallel to eliminate lag/delay
@@ -563,48 +636,9 @@
                 // 3. Load Payment Methods
                 const paymentMethods = paymentRes.data;
                 if (paymentMethods && paymentMethods.length > 0) {
-                    const pmContainer = document.getElementById('dynamicPaymentMethods');
-                    if (pmContainer) {
-                        pmContainer.innerHTML = '';
-                        paymentMethods.forEach((method, idx) => {
-                            const isOnline = method.number && (method.number.toLowerCase() === 'online' || method.number.toLowerCase() === 'fawaterak');
-                            pmContainer.innerHTML += `
-                                <label class="payment-card">
-                                    <input type="radio" name="payment_method" value="${method.name}" data-online="${isOnline}" ${idx === 0 ? 'checked' : ''}>
-                                    <span class="text-white font-medium">${method.name} ${isOnline ? '' : `- رقم: <span dir="ltr">${method.number}</span>`}</span>
-                                </label>
-                            `;
-                        });
-
-                        // Toggle manual fields based on online status
-                        const toggleFields = () => {
-                            const selected = pmContainer.querySelector('input[name="payment_method"]:checked');
-                            const isOnline = selected && selected.getAttribute('data-online') === 'true';
-                            
-                            const transferInput = document.getElementById('transferNumber');
-                            const receiptInput = document.getElementById('receipt');
-                            
-                            if (transferInput) {
-                                transferInput.required = !isOnline;
-                                const group = transferInput.closest('.form-group');
-                                if (group) group.style.display = isOnline ? 'none' : 'block';
-                            }
-                            if (receiptInput) {
-                                receiptInput.required = !isOnline;
-                                const group = receiptInput.closest('.form-group');
-                                if (group) group.style.display = isOnline ? 'none' : 'block';
-                            }
-                            
-                            const btn = document.getElementById('submitSubscriptionBtn');
-                            if (btn) {
-                                btn.textContent = isOnline ? 'الانتقال إلى الدفع الإلكتروني' : 'تأكيد التسجيل وإرسال الإثبات';
-                            }
-                        };
-
-                        pmContainer.addEventListener('change', toggleFields);
-                        toggleFields(); // Initial run
+                    renderPaymentMethods(paymentMethods);
+                    setPaymentCache(paymentMethods);
                 }
-                } // <-- Added missing closing brace
 
                 // Check URL params for Fawaterak redirection status
                 const urlParams = new URLSearchParams(window.location.search);

@@ -1243,7 +1243,7 @@
                     </div>
                 </div>
                 <div class="forgot-password">
-                    <a href="#">نسيت كلمة المرور؟</a>
+                    <a href="#" id="forgotPasswordBtn">نسيت كلمة المرور؟</a>
                 </div>
 
                 <button type="submit" class="btn-submit login-submit" id="emailLoginBtn">دخول</button>
@@ -2215,6 +2215,36 @@
             }
         });
 
+        document.getElementById('forgotPasswordBtn')?.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const emailInput = document.getElementById('loginEmail');
+            const email = emailInput.value.trim();
+
+            if (!email) {
+                showToast("الرجاء كتابة بريدك الإلكتروني أولاً في الحقل المخصص أعلاه، ثم اضغط على 'نسيت كلمة المرور؟'", "error");
+                emailInput.focus();
+                return;
+            }
+
+            const btn = document.getElementById('forgotPasswordBtn');
+            const originalText = btn.textContent;
+            btn.textContent = 'جاري الإرسال...';
+            btn.style.pointerEvents = 'none';
+
+            const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+                redirectTo: window.location.origin + '/index.html',
+            });
+
+            if (error) {
+                showToast("فشل إرسال رابط استعادة كلمة المرور: " + error.message, "error");
+            } else {
+                showToast("تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني بنجاح.", "success");
+            }
+
+            btn.textContent = originalText;
+            btn.style.pointerEvents = 'auto';
+        });
+
         document.getElementById('supabaseSignupForm')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('signupEmail').value;
@@ -2262,6 +2292,21 @@
         // NOTE: Called by initSupabase() after supabaseClient is ready
         function setupAuthListener() {
             supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                if (event === 'PASSWORD_RECOVERY') {
+                    const newPassword = prompt("مرحباً بك! يرجى كتابة كلمة المرور الجديدة (يجب أن تتكون من 6 أحرف أو أرقام على الأقل):");
+                    if (newPassword && newPassword.length >= 6) {
+                        const { data, error } = await supabaseClient.auth.updateUser({ password: newPassword });
+                        if (error) {
+                            alert("فشل تغيير كلمة المرور: " + error.message);
+                        } else {
+                            alert("تم تغيير كلمة المرور بنجاح! يمكنك الآن تصفح الدورة.");
+                            window.history.replaceState(null, null, window.location.pathname);
+                        }
+                    } else if (newPassword !== null) {
+                        alert("كلمة المرور قصيرة جداً. الرجاء إعادة محاولة الدخول من الرابط في بريدك الإلكتروني.");
+                    }
+                }
+
                 const navCta = document.getElementById('nav-cta-container');
                 if (session && session.user) {
                     const user = session.user;

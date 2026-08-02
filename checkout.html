@@ -227,7 +227,7 @@
                 <img src="logo/aaaa.jpg.jpeg" alt="شعار الدورة" class="logo-img dyn_site_logo">
             </a>
         </div>
-        <div class="nav-menu">
+        <div class="nav-menu" id="nav-menu">
             <ul class="nav-links">
                 <li><a href="index.html#hero">الرئيسية</a></li>
                 <li><a href="index.html#details">تفاصيل الباقة</a></li>
@@ -236,6 +236,13 @@
             </ul>
             <div class="nav-cta">
                 <a href="index.html#pricing-new" class="btn-primary">الرجوع للعرض</a>
+            </div>
+        </div>
+        <div class="menu-toggle" id="mobile-menu">
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
             </div>
         </div>
     </nav>
@@ -848,6 +855,32 @@
                 btn.disabled = false;
             }
         });
+
+        // Mobile Menu Logic
+        const mobileMenu = document.getElementById('mobile-menu');
+        const navMenu = document.getElementById('nav-menu');
+
+        if (mobileMenu && navMenu) {
+            mobileMenu.addEventListener('click', () => {
+                navMenu.classList.toggle('active');
+                mobileMenu.classList.toggle('active');
+            });
+
+            const navItems = document.querySelectorAll('.nav-links a, .nav-cta a');
+            navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    navMenu.classList.remove('active');
+                    mobileMenu.classList.remove('active');
+                });
+            });
+
+            document.addEventListener('click', (event) => {
+                if (navMenu.classList.contains('active') && !navMenu.contains(event.target) && !mobileMenu.contains(event.target)) {
+                    navMenu.classList.remove('active');
+                    mobileMenu.classList.remove('active');
+                }
+            });
+        }
     </script>
 
 </body>

@@ -532,8 +532,15 @@
             }
 
             try {
-                // Pre-fill fields from session
-                const { data: { session } } = await supabaseClient.auth.getSession();
+                // Fetch all data in parallel to eliminate lag/delay
+                const [sessionRes, contentRes, paymentRes] = await Promise.all([
+                    supabaseClient.auth.getSession(),
+                    supabaseClient.from('site_content').select('*'),
+                    supabaseClient.from('payment_methods').select('*').order('order_index', { ascending: true })
+                ]);
+
+                // 1. Pre-fill fields from session
+                const session = sessionRes.data?.session;
                 if (session && session.user) {
                     const user = session.user;
                     const regFullName = document.getElementById('regFullName');
@@ -546,15 +553,15 @@
                     }
                 }
 
-                // Load fresh price and logo
-                const { data: contentData } = await supabaseClient.from('site_content').select('*');
+                // 2. Load fresh price and logo
+                const contentData = contentRes.data;
                 if (contentData) {
                     applyContentData(contentData);
                     setContentCache(contentData);
                 }
 
-                // Load Payment Methods
-                const { data: paymentMethods } = await supabaseClient.from('payment_methods').select('*').order('order_index', { ascending: true });
+                // 3. Load Payment Methods
+                const paymentMethods = paymentRes.data;
                 if (paymentMethods && paymentMethods.length > 0) {
                     const pmContainer = document.getElementById('dynamicPaymentMethods');
                     if (pmContainer) {

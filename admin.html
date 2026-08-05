@@ -364,14 +364,6 @@
                         <label>وصف وتفاصيل العرض النهائي (تحت العنوان الرئيسي)</label>
                         <textarea id="cta_section_desc" rows="2" placeholder="تحصل على: 5 دورات كاملة، ملف أحكام محكمة، خصم 50% على الاستشارات..."></textarea>
                     </div>
-                    <div class="form-group">
-                        <label>السعر القديم</label>
-                        <input type="text" id="cta_old_price" placeholder="4500 جنيه">
-                    </div>
-                    <div class="form-group">
-                        <label>السعر الجديد (الحالي)</label>
-                        <input type="text" id="cta_new_price" placeholder="700 جنيه">
-                    </div>
                     <div class="form-group" style="grid-column: span 2;">
                         <label>النص التوضيحي تحت السعر (نسبة الخصم وعدد المشتركين)</label>
                         <input type="text" id="cta_subtitle" placeholder="(خصم يصل إلى 84%) لأول 100 مشترك فقط!">
@@ -1021,7 +1013,7 @@
         const inputs = e.target.querySelectorAll('input[type="text"], input[type="hidden"], textarea');
         const updates = Array.from(inputs).map(input => ({ id: input.id, content: input.value, type: 'text' }));
         const { error } = await supabaseClient.from('site_content').upsert(updates);
-        if (error) alert("خطأ في الحفظ"); else showToast();
+        if (error) alert("خطأ في الحفظ: " + (error.message || JSON.stringify(error))); else showToast();
     });
 
     // --- Save Chatbot Settings ---

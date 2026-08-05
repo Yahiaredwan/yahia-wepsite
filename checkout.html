@@ -785,6 +785,9 @@
                     if (payRes.error) {
                         throw new Error('فشل بدء عملية الدفع الإلكتروني: ' + (payRes.error.message || payRes.error));
                     }
+                    if (payRes.data?.error) {
+                        throw new Error('فشل بدء عملية الدفع الإلكتروني: ' + payRes.data.error);
+                    }
 
                     const checkoutUrl = payRes.data?.url;
                     if (checkoutUrl) {

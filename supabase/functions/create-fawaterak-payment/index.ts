@@ -120,7 +120,7 @@ Deno.serve(async (req) => {
     const originUrl = reqOrigin.endsWith("/") ? reqOrigin.slice(0, -1) : reqOrigin;
 
     const redirectionUrls = {
-      successUrl: `${originUrl}/index.html?status=success`,
+      successUrl: `${originUrl}/success.html`,
       failUrl: `${originUrl}/index.html?status=fail`,
       pendingUrl: `${originUrl}/index.html?status=pending`,
       webhookUrl: `${cleanedSupabaseUrl}/functions/v1/fawaterak-webhook`,
@@ -194,7 +194,7 @@ Deno.serve(async (req) => {
       JSON.stringify({ error: error.message }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
+        status: 200, // Returning 200 so the frontend can parse the JSON error body
       }
     );
   }

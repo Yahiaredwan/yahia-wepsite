@@ -175,6 +175,59 @@ Deno.serve(async (req) => {
               }]);
           }
         }
+
+        // 3. Send Purchase event to Facebook CAPI
+        try {
+          const PIXEL_ID = "1879911229646791";
+          const ACCESS_TOKEN = "EAAR2DkffaHkBSF0mFyZCDZBCxDGdq2pZAGqiZB9jsCsazozLCfGSGbYUafepzNMxoXolPoyoZBOeTjTAIWwCSYCMgBuXlp13AwqYcsewDA4TcoNf7gosC2ZAy5RBAZCmW3O4tZCMuVZCjtsv1NLBNVplGlN0rVX0BYWm8rZCZAwBIDyTY6pYhUICGSMiagXJaa8IwZDZD";
+          
+          const hashData = async (data) => {
+            if (!data) return undefined;
+            const encoder = new TextEncoder();
+            const dataBuf = encoder.encode(data.toLowerCase().trim());
+            const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuf);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+          };
+
+          let em, ph;
+          if (sub.email) em = await hashData(sub.email);
+          if (sub.phone) ph = await hashData(sub.phone);
+
+          const fbPayload = {
+            data: [
+              {
+                event_name: "Purchase",
+                event_time: Math.floor(Date.now() / 1000),
+                action_source: "website",
+                user_data: {
+                  em: em || "",
+                  ph: ph || "",
+                },
+                custom_data: {
+                  currency: "EGP",
+                  value: 2950
+                }
+              }
+            ]
+          };
+
+          const fbUrl = `https://graph.facebook.com/v19.0/${PIXEL_ID}/events?access_token=${ACCESS_TOKEN}`;
+          const fbRes = await fetch(fbUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(fbPayload)
+          });
+          
+          if (!fbRes.ok) {
+            const errBody = await fbRes.text();
+            console.error("Failed to send Purchase to FB CAPI:", errBody);
+          } else {
+            console.log("Successfully sent Purchase event to FB CAPI");
+          }
+        } catch (fbErr) {
+          console.error("Error sending to FB CAPI:", fbErr);
+        }
       } else {
         console.warn(`No matching subscription found in database for invoice: ${invoiceId}`);
       }

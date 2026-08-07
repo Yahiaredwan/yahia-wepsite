@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const PIXEL_ID = "1879911229646791";
 // We can use an environment variable for the access token in production, but we will hardcode it for now as requested.
-const ACCESS_TOKEN = "EAAR2DkffaHkBSG01G8UyiHRC2XG4ZCDpHVgghHgiXRkduuGy5h565JPRsMa1HEUqhQEiebBmCA40ULSwr5xNQBhzj2gaPgitsBEiBKfW7myUeDn6th0sFS12Wwb9cskKO9Q1S5zRZAfQqo3m1QsewLAZCeq6a0wZCUOyfv7IMakbjmHMX7DVvkxmHVcT1AZDZD";
+const ACCESS_TOKEN = "EAAR2DkffaHkBSF0mFyZCDZBCxDGdq2pZAGqiZB9jsCsazozLCfGSGbYUafepzNMxoXolPoyoZBOeTjTAIWwCSYCMgBuXlp13AwqYcsewDA4TcoNf7gosC2ZAy5RBAZCmW3O4tZCMuVZCjtsv1NLBNVplGlN0rVX0BYWm8rZCZAwBIDyTY6pYhUICGSMiagXJaa8IwZDZD";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

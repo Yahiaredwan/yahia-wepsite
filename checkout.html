@@ -783,9 +783,10 @@
                     const { data: { session } } = await supabaseClient.auth.getSession();
                     const email = session?.user?.email || "";
 
-                    // Get cart total from DOM
+                    // Get cart total from DOM, handle Arabic numerals if any
                     const cartTotalText = document.getElementById('dyn_cta_new_price')?.textContent || "700";
-                    const cartTotal = parseFloat(cartTotalText.replace(/[^0-9.]/g, '')) || 700;
+                    const englishNumStr = cartTotalText.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+                    const cartTotal = parseFloat(englishNumStr.replace(/[^0-9.]/g, '')) || 700;
 
                     const payRes = await supabaseClient.functions.invoke('create-fawaterak-payment', {
                         body: {

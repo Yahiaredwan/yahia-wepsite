@@ -1923,8 +1923,8 @@
 
             async function fetchAllContent() {
                 try {
-                    const { data, error } = await supabaseClient.from('site_content').select('*');
-                    if (error) throw error;
+                    const response = await fetch('http://127.0.0.1:8000/api/cms/site_content');
+                    const { data } = await response.json();
                     return data;
                 } catch (e) {
                     return null;
@@ -1963,13 +1963,13 @@
                     curriculumRes,
                     faqsRes
                 ] = await Promise.all([
-                    supabaseClient.from('site_content').select('*'),
-                    supabaseClient.from('payment_methods').select('*').order('order_index', { ascending: true }),
-                    supabaseClient.from('sections').select('*').eq('status', 'active').order('order_index', { ascending: true }),
-                    supabaseClient.from('features').select('*').order('order_index', { ascending: true }),
-                    supabaseClient.from('trainers').select('*').order('order_index', { ascending: true }),
-                    supabaseClient.from('curriculum').select('*').order('order_index', { ascending: true }),
-                    supabaseClient.from('faqs').select('*').order('order_index', { ascending: true })
+                    fetch('http://127.0.0.1:8000/api/cms/site_content').then(res => res.json()),
+                    fetch('http://127.0.0.1:8000/api/cms/payment_methods').then(res => res.json()),
+                    fetch('http://127.0.0.1:8000/api/cms/sections').then(res => res.json()),
+                    fetch('http://127.0.0.1:8000/api/cms/features').then(res => res.json()),
+                    fetch('http://127.0.0.1:8000/api/cms/trainers').then(res => res.json()),
+                    fetch('http://127.0.0.1:8000/api/cms/curriculum').then(res => res.json()),
+                    fetch('http://127.0.0.1:8000/api/cms/faqs').then(res => res.json())
                 ]);
 
                 // 1. Fetch site_content
@@ -2205,13 +2205,37 @@
             const btn = document.getElementById('emailLoginBtn');
             btn.textContent = 'جاري تسجيل الدخول...';
 
-            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
 
-            if (error) {
-                showToast("فشل تسجيل الدخول: " + error.message);
-                btn.textContent = 'دخول';
-            } else {
+                if (!response.ok) {
+                    const errData = await response.json();
+                    showToast("فشل تسجيل الدخول: " + (errData.detail || "خطأ غير معروف"));
+                    btn.textContent = 'دخول';
+                    return;
+                }
+
+                const data = await response.json();
+                localStorage.setItem('fastapi_token', data.access_token);
+                
+                showToast("تم تسجيل الدخول بنجاح!", "success");
                 loginModal.classList.remove('active');
+                btn.textContent = 'دخول';
+                
+                document.getElementById('nav-cta-container').innerHTML = 
+                    '<a href="#" class="btn-outline-login btn-logout" id="logoutBtn">تسجيل الخروج</a>';
+                    
+                document.getElementById('logoutBtn').addEventListener('click', () => {
+                    localStorage.removeItem('fastapi_token');
+                    location.reload();
+                });
+
+            } catch (error) {
+                showToast("خطأ في الاتصال بالخادم.");
                 btn.textContent = 'دخول';
             }
         });
@@ -2249,7 +2273,6 @@
         document.getElementById('supabaseSignupForm')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('signupEmail').value;
-            const phone = document.getElementById('signupPhone').value;
             const password = document.getElementById('signupPassword').value;
             const confirmPassword = document.getElementById('signupConfirmPassword').value;
 
@@ -2261,30 +2284,27 @@
             const btn = document.getElementById('emailSignupBtn');
             btn.textContent = 'جاري إنشاء الحساب...';
 
-            // Send phone number as user metadata
-            const { data, error } = await supabaseClient.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: {
-                        phone: phone
-                    }
-                }
-            });
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
 
-            if (error) {
-                showToast("فشل إنشاء الحساب: " + error.message);
-                btn.textContent = 'إنشاء الحساب';
-            } else {
-                // Insert pending request immediately to avoid waiting for email confirmation
-                try {
-                    await supabaseClient.from('user_approvals').insert([{ email: email, phone: phone, status: 'pending' }]);
-                } catch (err) {
-                    console.error("Direct insert error:", err);
+                if (!response.ok) {
+                    const errData = await response.json();
+                    showToast("فشل إنشاء الحساب: " + (errData.detail || "حدث خطأ"));
+                    btn.textContent = 'إنشاء الحساب';
+                    return;
                 }
 
-                showToast("تم إرسال رابط تأكيد إلى بريدك الإلكتروني. يرجى مراجعة بريدك الوارد لتفعيل الحساب.", "success");
+                showToast("تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول.", "success");
                 signupModal.classList.remove('active');
+                document.getElementById('loginModal').classList.add('active');
+                btn.textContent = 'إنشاء الحساب';
+
+            } catch (error) {
+                showToast("خطأ في الاتصال بالخادم.");
                 btn.textContent = 'إنشاء الحساب';
             }
         });
@@ -2558,7 +2578,10 @@
 
                 // Trigger active Social Media Pixels conversion event
                 if (typeof window.trackPixelEvent === 'function') {
-                    window.trackPixelEvent('Purchase', { value: 700, currency: 'EGP' });
+                    const newPriceText = document.getElementById('dyn_cta_new_price')?.textContent || '700';
+                    const englishNumStr = newPriceText.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+                    const newPriceVal = parseFloat(englishNumStr.replace(/[^0-9.]/g, '')) || 700;
+                    window.trackPixelEvent('Purchase', { value: newPriceVal, currency: 'EGP' });
                 }
 
                 // Show WhatsApp Success Modal
@@ -2960,7 +2983,10 @@
             if (status === 'success') {
                 // Trigger active Social Media Pixels conversion event (Online Payment)
                 if (typeof window.trackPixelEvent === 'function') {
-                    window.trackPixelEvent('Purchase', { value: 700, currency: 'EGP' });
+                    const newPriceText2 = document.getElementById('dyn_cta_new_price')?.textContent || '700';
+                    const englishNumStr2 = newPriceText2.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+                    const newPriceVal2 = parseFloat(englishNumStr2.replace(/[^0-9.]/g, '')) || 700;
+                    window.trackPixelEvent('Purchase', { value: newPriceVal2, currency: 'EGP' });
                 }
 
                 Swal.fire({

@@ -53,8 +53,9 @@ Deno.serve(async (req) => {
           if (item.id === "fawaterak_client_secret" && item.content) envClientSecret = item.content;
           if (item.id === "fawaterak_env" && item.content) envFawaterak = item.content;
           if (item.id === "cta_new_price" && item.content) {
-            // Extract numbers only
-            const parsed = parseFloat(item.content.replace(/[^0-9.]/g, ''));
+            // Extract numbers only, handling Arabic numerals
+            const englishNumStr = item.content.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+            const parsed = parseFloat(englishNumStr.replace(/[^0-9.]/g, ''));
             if (!isNaN(parsed) && parsed > 0) defaultPrice = parsed;
           }
         });

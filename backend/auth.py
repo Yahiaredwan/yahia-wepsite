@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from passlib.context import CryptContext
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from . import database, models, schemas
+from backend import database, models, schemas
 
 SECRET_KEY = "super_secret_key_change_in_production"
 ALGORITHM = "HS256"

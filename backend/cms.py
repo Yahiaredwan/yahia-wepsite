@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from . import database, models
+from backend import database, models
 
 router = APIRouter()
 
